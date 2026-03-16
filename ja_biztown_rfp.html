@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JA BizTown RFP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --black: #1d1e2c;
+    --white: #fbfcff;
+    --red: #e4572e;
+    --gray: #888;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #fbfcff;
+    color: #1d1e2c;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .rfp-header {
+    background: #1d1e2c;
+    color: #fbfcff;
+    padding: 32px 32px 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    border-bottom: 4px solid #e4572e;
+  }
+  .rfp-header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #e4572e;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .rfp-header h1 {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .rfp-header .meta {
+    text-align: right;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.8;
+  }
+  .rfp-header .meta strong { color: #fbfcff; }
+
+  .nav-strip {
+    background: #1d1e2c;
+    display: flex;
+    overflow-x: auto;
+    gap: 0;
+    border-bottom: 2px solid #e4572e;
+  }
+  .nav-strip button {
+    background: none;
+    border: none;
+    border-right: 1px solid #2e2f40;
+    color: #999;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 12px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-strip button:hover { background: #2a2b3d; color: #fbfcff; }
+  .nav-strip button.active { background: #e4572e; color: #fbfcff; }
+
+  .section { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+  .section.active { display: block; }
+
+  .sec-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #e4572e;
+    margin-bottom: 6px;
+  }
+  .sec-heading {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #1d1e2c;
+    padding-bottom: 12px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .card {
+    background: #fff;
+    border: 1.5px solid #1d1e2c;
+    padding: 18px;
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+  }
+  .card-value {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .card-sub { font-size: 12px; color: #888; margin-top: 4px; }
+  .card-accent { border-left: 4px solid #e4572e; }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .card p { font-size: 13px; line-height: 1.6; color: #333; }
+
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1.5px solid #1d1e2c;
+    margin-bottom: 24px;
+  }
+  .stat-cell {
+    padding: 16px 20px;
+    border-right: 1.5px solid #1d1e2c;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .num { font-size: 30px; font-weight: 900; letter-spacing: -0.03em; }
+  .stat-cell .lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin-top: 2px; }
+  .stat-cell.red { background: #e4572e; color: #fbfcff; }
+  .stat-cell.red .lbl { color: rgba(255,255,255,0.7); }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1.5px solid #1d1e2c;
+    margin: 2px;
+  }
+  .tag.red { background: #e4572e; color: #fbfcff; border-color: #e4572e; }
+  .tag.dark { background: #1d1e2c; color: #fbfcff; }
+
+  .timeline { position: relative; margin: 8px 0 24px; }
+  .tl-track {
+    position: absolute;
+    left: 110px;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: #1d1e2c;
+  }
+  .tl-item {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .tl-date {
+    text-align: right;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding-top: 4px;
+    color: #888;
+  }
+  .tl-dot {
+    position: absolute;
+    left: 104px;
+    top: 6px;
+    width: 15px;
+    height: 15px;
+    background: #1d1e2c;
+    border: 3px solid #fbfcff;
+    box-shadow: 0 0 0 2px #1d1e2c;
+  }
+  .tl-dot.red { background: #e4572e; box-shadow: 0 0 0 2px #e4572e; }
+  .tl-content {
+    background: #fff;
+    border: 1.5px solid #1d1e2c;
+    padding: 12px 16px;
+    margin-left: 28px;
+  }
+  .tl-content .phase {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #e4572e;
+    margin-bottom: 2px;
+  }
+  .tl-content .name { font-size: 14px; font-weight: 700; }
+  .tl-content .note { font-size: 12px; color: #666; margin-top: 4px; }
+
+  .module-item {
+    border: 1.5px solid #1d1e2c;
+    padding: 14px;
+    background: #fff;
+  }
+  .module-item .m-icon { font-size: 18px; margin-bottom: 6px; }
+  .module-item .m-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .module-item .m-desc { font-size: 11px; color: #666; margin-top: 4px; line-height: 1.4; }
+
+  .role-card { border: 1.5px solid #1d1e2c; background: #fff; }
+  .role-header {
+    background: #1d1e2c;
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .role-header.red { background: #e4572e; }
+  .role-body { padding: 14px; }
+  .role-body li { font-size: 12px; line-height: 1.7; list-style: none; padding-left: 12px; position: relative; color: #333; }
+  .role-body li::before { content: '—'; position: absolute; left: 0; color: #e4572e; font-weight: 700; }
+
+  .checklist li { list-style: none; font-size: 13px; line-height: 1.6; padding: 6px 0; border-bottom: 0.5px solid #ddd; display: flex; align-items: flex-start; gap: 8px; }
+  .checklist li:last-child { border-bottom: none; }
+  .check-mark { width: 16px; height: 16px; border: 1.5px solid #1d1e2c; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px; }
+  .check-mark.yes { background: #1d1e2c; color: #fbfcff; }
+
+  table.rfp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.rfp-table th {
+    background: #1d1e2c;
+    color: #fbfcff;
+    text-align: left;
+    padding: 9px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  table.rfp-table td { padding: 9px 12px; border-bottom: 1px solid #ddd; vertical-align: top; }
+  table.rfp-table tr:last-child td { border-bottom: none; }
+  table.rfp-table tr:nth-child(even) td { background: #f7f8fc; }
+
+  .divider { border: none; border-top: 2px solid #1d1e2c; margin: 28px 0; }
+
+  .callout {
+    border-left: 4px solid #e4572e;
+    background: #fff;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .callout strong { font-weight: 700; }
+
+  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap-lg { position: relative; height: 380px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #1d1e2c;
+    color: #fbfcff;
+  }
+  .badge.red { background: #e4572e; }
+  .badge.outline { background: none; border: 1.5px solid #1d1e2c; color: #1d1e2c; }
+
+  @media (max-width: 720px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .stat-strip { grid-template-columns: 1fr 1fr; }
+    .stat-cell { border-bottom: 1.5px solid #1d1e2c; }
+  }
+</style>
+</head>
+<body>
+
+<div class="rfp-header">
+  <div>
+    <div class="eyebrow">Request for Proposal — Confidential</div>
+    <h1>JA BizTown<br>Simulation 3.0</h1>
+  </div>
+  <div class="meta">
+    <div><strong>Issued:</strong> March 13, 2026</div>
+    <div><strong>Proposals Due:</strong> April 10, 2026</div>
+    <div><strong>Target Launch:</strong> June 2027</div>
+    <div style="margin-top:8px;"><span style="display:inline-block;background:#e4572e;color:#fbfcff;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Junior Achievement USA</span></div>
+  </div>
+</div>
+
+<div class="nav-strip">
+  <button class="active" onclick="show('overview')">01 Overview</button>
+  <button onclick="show('schedule')">02 Timeline</button>
+  <button onclick="show('simulation')">03 Simulation Day</button>
+  <button onclick="show('modules')">04 Modules</button>
+  <button onclick="show('roles')">05 Roles</button>
+  <button onclick="show('tech')">06 Technical</button>
+  <button onclick="show('eval')">07 Evaluation</button>
+  <button onclick="show('submit')">08 Submit</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="overview" class="section active">
+  <div class="sec-title">Section 01</div>
+  <div class="sec-heading">Project Overview</div>
+
+  <div class="stat-strip">
+    <div class="stat-cell red">
+      <div class="num">4.6M</div>
+      <div class="lbl">Students Served Annually</div>
+    </div>
+    <div class="stat-cell">
+      <div class="num">98</div>
+      <div class="lbl">Local JA Areas Nationwide</div>
+    </div>
+    <div class="stat-cell">
+      <div class="num">150</div>
+      <div class="lbl">Students per Simulation Day</div>
+    </div>
+    <div class="stat-cell">
+      <div class="num">4.5hr</div>
+      <div class="lbl">Simulation Duration</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>The ask:</strong> Build a new elementary/middle school simulation software for a physical, hands-on experience where students operate businesses, manage money, and fulfil civic roles in a simulated town for a day. The new platform replaces the existing system with a modern, tablet-first, real-time experience.
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card card-accent">
+      <div class="card-label">What we're building</div>
+      <h3 style="margin-bottom:10px;">Core Platform</h3>
+      <p>A unified digital platform supporting a real-economy simulation — banking, payroll, point-of-sale, voting, marketing, and civic engagement — running simultaneously across 80–150 student devices in a physical facility.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Key Design Principle</div>
+      <h3 style="margin-bottom:10px;">Real Feels Real</h3>
+      <p>Tap-to-pay, live dashboards, AI-assisted marketing, digital banking — the UX should mirror tools students will encounter in the real world, but age-appropriate and guided.</p>
+    </div>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Economic Model — How the Town Works</div>
+    <div class="grid-3">
+      <div class="card" style="border-top:4px solid #e4572e;">
+        <div class="card-label">Businesses (14–20)</div>
+        <p>Each storefront has 6–8 student employees. Apply for loans, manage payroll, run POS, serve customers, send/receive B2B invoices.</p>
+      </div>
+      <div class="card" style="border-top:4px solid #1d1e2c;">
+        <div class="card-label">Banking & Finance</div>
+        <p>Students hold personal checking + savings accounts. Debit cards, QR-code payments, NFC tap-to-pay. Real-time balance sync across all devices.</p>
+      </div>
+      <div class="card" style="border-top:4px solid #888;">
+        <div class="card-label">Civic Layer</div>
+        <p>Voting on town issues, tax mechanics, philanthropic scenarios, community leaderboard — students see how personal decisions affect the whole economy.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Learning Objectives</div>
+    <div class="chart-wrap">
+      <canvas id="objChart"></canvas>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Delivery Modes</div>
+  <div class="grid-3">
+    <div class="card">
+      <span class="badge">Permanent Facility</span>
+      <p style="margin-top:10px;">Full onsite JA BizTown installation in a dedicated physical space.</p>
+    </div>
+    <div class="card">
+      <span class="badge">Mobile / Pop-Up</span>
+      <p style="margin-top:10px;">Tablet-based "JA BizTown Mobile" deployed in schools, community centres.</p>
+    </div>
+    <div class="card">
+      <span class="badge red">Paper Fallback</span>
+      <p style="margin-top:10px;">Required: complete paper-based version for power/internet outages.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div id="schedule" class="section">
+  <div class="sec-title">Section 02</div>
+  <div class="sec-heading">Project Timeline</div>
+
+  <div class="callout">
+    <strong>Key deadline:</strong> Beta ready for pilot testing January 2027 — Initial Release June 2027.
+  </div>
+
+  <div class="grid-2" style="margin-bottom:32px;">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Project Milestones</div>
+      <div class="timeline">
+        <div class="tl-track"></div>
+        <div class="tl-item">
+          <div class="tl-date">Mar 2026</div>
+          <div class="tl-dot red"></div>
+          <div class="tl-content">
+            <div class="phase">RFP Phase</div>
+            <div class="name">RFP Distributed</div>
+            <div class="note">Questions due Mar 20 · Proposals due Apr 10</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Apr 2026</div>
+          <div class="tl-dot"></div>
+          <div class="tl-content">
+            <div class="phase">Selection</div>
+            <div class="name">Vendor Selected</div>
+            <div class="note">Interviews Apr 20–24 · Award Apr 27–May 1</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">May 2026</div>
+          <div class="tl-dot red"></div>
+          <div class="tl-content">
+            <div class="phase">Kickoff</div>
+            <div class="name">Work Begins + Vendor Attends Simulation</div>
+            <div class="note">In-person kickoff · Design & dev starts</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Sep–Oct 2026</div>
+          <div class="tl-dot"></div>
+          <div class="tl-content">
+            <div class="phase">Prototype</div>
+            <div class="name">Clickable Prototype for User Testing</div>
+            <div class="note">Key milestone — real student testing required</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Nov–Dec 2026</div>
+          <div class="tl-dot"></div>
+          <div class="tl-content">
+            <div class="phase">Training</div>
+            <div class="name">JA Area Training & Site Prep</div>
+            <div class="note">Video trailer training + pilot documents</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Jan–Mar 2027</div>
+          <div class="tl-dot red"></div>
+          <div class="tl-content">
+            <div class="phase">Pilot</div>
+            <div class="name">Pilot Release + Testing with JA Areas</div>
+            <div class="note">Real student feedback gathered and applied</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Mar–Jun 2027</div>
+          <div class="tl-dot"></div>
+          <div class="tl-content">
+            <div class="phase">Final</div>
+            <div class="name">Updates + Final Testing</div>
+            <div class="note">Iterate on pilot feedback</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Jun 2027</div>
+          <div class="tl-dot red"></div>
+          <div class="tl-content">
+            <div class="phase">Launch</div>
+            <div class="name">Initial Release</div>
+            <div class="note">Full training documentation complete</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">RFP Submission Deadlines</div>
+      <table class="rfp-table" style="margin-bottom:24px;">
+        <thead><tr><th>Step</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td>Confirm participation</td><td><strong>Mar 18</strong></td></tr>
+          <tr><td>Submit questions</td><td><strong>Mar 20</strong></td></tr>
+          <tr><td>JA answers distributed</td><td><strong>Mar 27</strong></td></tr>
+          <tr><td><strong>Proposals due</strong></td><td><strong style="color:#e4572e;">Apr 10</strong></td></tr>
+          <tr><td>JA reviews proposals</td><td>Apr 13–17</td></tr>
+          <tr><td>Interviews (if needed)</td><td>Apr 20–24</td></tr>
+          <tr><td>Vendor selected</td><td>Apr 27–May 1</td></tr>
+          <tr><td>MSA negotiated</td><td>May 1–15</td></tr>
+          <tr><td>Work begins</td><td>May 2026</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Proposals are irrevocable for 60 days</strong> after the submission deadline. Submissions to: <strong>Jeannine.reilly@ja.org</strong> and <strong>julian.arias@ja.org</strong>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;margin-top:24px;">Phase Duration</div>
+      <div class="chart-wrap">
+        <canvas id="ganttChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIMULATION DAY -->
+<div id="simulation" class="section">
+  <div class="sec-title">Section 03</div>
+  <div class="sec-heading">Simulation Day Schedule</div>
+
+  <div class="callout">
+    The simulation is a structured 4.5-hour experience led by JA staff with a mic. Every phase has defined modules, timing, and learning objectives. The software must advance and track each phase.
+  </div>
+
+  <div class="stat-strip" style="margin-bottom:24px;">
+    <div class="stat-cell red"><div class="num">4.5hr</div><div class="lbl">Total Duration</div></div>
+    <div class="stat-cell"><div class="num">13</div><div class="lbl">Simulation Phases</div></div>
+    <div class="stat-cell"><div class="num">2</div><div class="lbl">Ops Rounds</div></div>
+    <div class="stat-cell"><div class="num">20+</div><div class="lbl">Volunteers</div></div>
+  </div>
+
+  <table class="rfp-table">
+    <thead>
+      <tr><th>#</th><th>Phase</th><th>Duration</th><th>Key Student Activity</th><th>Modules Required</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Student Arrival & Welcome</strong></td><td>15 min</td><td>Orientation, safety briefing, knowledge check</td><td><span class="badge outline">None</span></td></tr>
+      <tr><td>2</td><td><strong>Opening Town Meeting</strong></td><td>15 min</td><td>Citizens' Pledge, CEO speeches</td><td><span class="badge outline">None</span></td></tr>
+      <tr><td>3</td><td><strong>New Hire Orientation</strong></td><td>30 min</td><td>Team intro, job roles, team building widget</td><td><span class="badge">Surveys</span> <span class="badge">Team Builder</span></td></tr>
+      <tr><td>4</td><td><strong>Trainings</strong></td><td>20 min</td><td>Marketing, leadership, customer service, merchandising</td><td><span class="badge">Digital Marketing</span></td></tr>
+      <tr><td>5</td><td><strong>Business Opening</strong></td><td>20 min</td><td>Loan application, payroll, set product prices</td><td><span class="badge red">Loan</span> <span class="badge red">Payroll</span> <span class="badge red">POS</span></td></tr>
+      <tr><td>6</td><td><strong>Lunch</strong></td><td>20 min</td><td>Break</td><td><span class="badge outline">None</span></td></tr>
+      <tr><td>7</td><td><strong>Sales Strategy Round 1</strong></td><td>10 min</td><td>CMO leads pricing & goals meeting</td><td><span class="badge">Marketing</span> <span class="badge">POS</span></td></tr>
+      <tr><td>8</td><td><strong>Business Operations Round 1</strong></td><td>30 min</td><td>Sales, B2B, shopping, voting, CEO finalises loan at bank</td><td><span class="badge red">POS</span> <span class="badge red">Banking</span> <span class="badge red">Voting</span> <span class="badge red">Billing</span></td></tr>
+      <tr><td>9</td><td><strong>Sales Strategy Round 2</strong></td><td>10 min</td><td>Analyse Round 1 data, pricing adjustment, random scenario</td><td><span class="badge">Marketing</span> <span class="badge">Banking</span> <span class="badge red">Scenario</span></td></tr>
+      <tr><td>10</td><td><strong>Business Operations Round 2</strong></td><td>21 min</td><td>Revised strategy execution, remaining B2B + civic tasks</td><td><span class="badge red">POS</span> <span class="badge red">Banking</span> <span class="badge red">Voting</span></td></tr>
+      <tr><td>11</td><td><strong>Business Debrief</strong></td><td>10 min</td><td>Review performance data, post-survey, summary report</td><td><span class="badge">Banking</span> <span class="badge">Leaderboard</span></td></tr>
+      <tr><td>12</td><td><strong>Business Closing</strong></td><td>5 min</td><td>Clean & reset storefronts</td><td><span class="badge outline">None</span></td></tr>
+      <tr><td>13</td><td><strong>State of the Town</strong></td><td>10 min</td><td>Mayor presents results, awards, leaderboard reveal</td><td><span class="badge">Voting</span> <span class="badge">Leaderboard</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- MODULES -->
+<div id="modules" class="section">
+  <div class="sec-title">Section 04</div>
+  <div class="sec-heading">Required Software Modules</div>
+
+  <div class="callout">
+    Every module below is a hard requirement. The platform must support all simultaneously on a one-device-per-student model with real-time data sync across all 80–150 devices.
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;">
+    <div class="module-item"><div class="m-icon">💳</div><div class="m-name">Point of Sale System</div><div class="m-desc">Set sale price per storefront. Profit/loss slider based on loan vs. revenue. Real-time transaction recording.</div></div>
+    <div class="module-item"><div class="m-icon">📲</div><div class="m-name">Student Payment</div><div class="m-desc">QR code per device as payment. Colour-coded shopping break state. Debit card swiper support + NFC tap-to-pay.</div></div>
+    <div class="module-item"><div class="m-icon">🎨</div><div class="m-name">Digital Marketing Tool</div><div class="m-desc">Canva-style tool built into software. Share designs between devices, roles, businesses. AI slogan generation.</div></div>
+    <div class="module-item"><div class="m-icon">🏦</div><div class="m-name">Banking System</div><div class="m-desc">Personal checking + savings accounts. Deposits, withdrawals, real-time balance updates across all systems.</div></div>
+    <div class="module-item"><div class="m-icon">💰</div><div class="m-name">Payroll System</div><div class="m-desc">Direct deposit or printed paychecks. 2nd paycheck as triggered spot bonus. Simulation lead controls timing.</div></div>
+    <div class="module-item"><div class="m-icon">📋</div><div class="m-name">Loan Application & Approval</div><div class="m-desc">CFO applies on shared screen visible to all team. CEO finalises at bank. Screen-share view for team members.</div></div>
+    <div class="module-item"><div class="m-icon">📬</div><div class="m-name">Billing & Bill Pay</div><div class="m-desc">Send and receive invoices between businesses. B2B transaction tracking. Overdue bill alerts.</div></div>
+    <div class="module-item"><div class="m-icon">🗳️</div><div class="m-name">Voting</div><div class="m-desc">Kiosk version + mobile version for Mayor to carry. Results feed into leaderboard and State of the Town.</div></div>
+    <div class="module-item"><div class="m-icon">🌪️</div><div class="m-name">Business Scenarios</div><div class="m-desc">Randomised ethical scenarios (e.g. tornado hits town park). CEO decides contribution. XP gain/loss consequences.</div></div>
+    <div class="module-item"><div class="m-icon">🏆</div><div class="m-name">Leaderboard (XP)</div><div class="m-desc">Live, presentable on large screen. Scores: loan payoff speed, profit, invoices paid, donations, surveys, voting.</div></div>
+    <div class="module-item"><div class="m-icon">📊</div><div class="m-name">Business Dashboard</div><div class="m-desc">P&L statements, profit calculator, competitor pricing view, loan amount, pie charts + bar graphs.</div></div>
+    <div class="module-item"><div class="m-icon">📻</div><div class="m-name">Radio Business</div><div class="m-desc">Music/radio software integrated with facility A/V. Auto-imports business slogans for DJ to broadcast.</div></div>
+    <div class="module-item"><div class="m-icon">📝</div><div class="m-name">Surveys & Evaluation</div><div class="m-desc">Pre + post. Lock 4–6 questions nationally. Areas add up to 6. Multiple choice, yes/no, free response. Min 10 items, 125-char prompts.</div></div>
+    <div class="module-item"><div class="m-icon">🤝</div><div class="m-name">Team Building Widget</div><div class="m-desc">One-device-per-user real-time collaborative widget. Each student's input visibly contributes to a shared business output.</div></div>
+    <div class="module-item"><div class="m-icon">🤖</div><div class="m-name">AI Features</div><div class="m-desc">Slogan generation for marketing. CEO speech transcription via voice-to-text tablet input.</div></div>
+  </div>
+
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Module Complexity vs. Business Impact</div>
+  <div class="chart-wrap-lg"><canvas id="moduleChart"></canvas></div>
+</div>
+
+<!-- ROLES -->
+<div id="roles" class="section">
+  <div class="sec-title">Section 05</div>
+  <div class="sec-heading">Audience Roles & Requirements</div>
+
+  <div style="margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Role Summary</div>
+    <div class="chart-wrap"><canvas id="rolesChart"></canvas></div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="role-card">
+      <div class="role-header red">Students — Primary Users</div>
+      <div class="role-body"><ul>
+        <li>Grades 5–6, ages 9–12</li>
+        <li>One device per student (tablet)</li>
+        <li>Roles: CEO, CFO, CMO, general employees</li>
+        <li>Apply for loans, submit payroll, vote, shop</li>
+        <li>Authentication: QR code or PIN — no device lock-in</li>
+        <li>English + Spanish UI at minimum</li>
+      </ul></div>
+    </div>
+    <div class="role-card">
+      <div class="role-header">Simulation Manager (Staff)</div>
+      <div class="role-body"><ul>
+        <li>Full-time JA Area staff, leads entire day on mic</li>
+        <li>Centralized dashboard: real-time town status</li>
+        <li>Can push/pause simulation phases from laptop</li>
+        <li>Admin tools: reverse transactions, reissue paychecks, move students between businesses remotely</li>
+        <li>Award XP and subsidies to businesses</li>
+        <li>Trigger activities (voting, scenarios, payroll)</li>
+      </ul></div>
+    </div>
+    <div class="role-card">
+      <div class="role-header">Volunteers</div>
+      <div class="role-body"><ul>
+        <li>Corporate, parent, or community volunteers</li>
+        <li>Tablet dashboard: business P&L, student progress, transactions, loan status</li>
+        <li>Integrated volunteer guide with discussion prompts</li>
+        <li>Clear indicators for when + why to intervene</li>
+        <li>End-of-day feedback survey</li>
+      </ul></div>
+    </div>
+    <div class="role-card">
+      <div class="role-header">Teachers</div>
+      <div class="role-body"><ul>
+        <li>Deliver 12 pre-sim lessons before simulation day</li>
+        <li>Monitor student behaviour and engagement day-of</li>
+        <li>Access end-of-day reports via QR code or simple login</li>
+        <li>Individual student reports, business reports, full simulation report, voting results, evaluation data</li>
+        <li>May serve as improvised volunteer if needed</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">CMS Admin Roles</div>
+  <div class="grid-3">
+    <div class="card card-accent">
+      <div class="card-label">Super Admin (National)</div>
+      <p>JA USA. Sets national master templates, locks evaluation questions, pushes updates to all JA Areas without overwriting local customisation.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Local Admin</div>
+      <p>Per JA Area. Customises businesses, sponsors, logos, payroll rates, tax rates, loan terms. Can only access facilities they're assigned to.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Simulation Manager</div>
+      <p>Day-of setup and activation. Creates simulation templates, adjusts timing, enables/disables modules, manages real-time CMS changes during live sim.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TECH -->
+<div id="tech" class="section">
+  <div class="sec-title">Section 06</div>
+  <div class="sec-heading">Technical Requirements</div>
+
+  <div class="callout">
+    JA USA will own, host, and manage the platform on Microsoft Azure. Deviations from the stack are acceptable if the vendor can demonstrate equivalent capability.
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Preferred Tech Stack</div>
+      <table class="rfp-table">
+        <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+        <tbody>
+          <tr><td>Cloud Platform</td><td><strong>Microsoft Azure</strong></td></tr>
+          <tr><td>Database</td><td><strong>SQL Server</strong> (stored procedures)</td></tr>
+          <tr><td>Backend</td><td><strong>C# .NET Core 8.0 / 9.0</strong> — microservices</td></tr>
+          <tr><td>Frontend</td><td><strong>React Native</strong> (SPA, mobile-first)</td></tr>
+          <tr><td>Mobile Deploy</td><td><strong>Expo.dev</strong> — iOS + Android + web</td></tr>
+          <tr><td>Source Control</td><td><strong>Azure DevOps / Git</strong> (Gitflow)</td></tr>
+          <tr><td>Auth (students)</td><td>QR code or PIN — not device-bound</td></tr>
+          <tr><td>Auth (staff)</td><td><strong>Microsoft Entra B2C</strong> + OpenID</td></tr>
+          <tr><td>Reporting</td><td><strong>Power BI</strong> + Azure Application Insights</td></tr>
+          <tr><td>Containers</td><td>Docker — consistent dev/test/prod</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Scalability Requirements</div>
+      <div class="chart-wrap" style="margin-bottom:20px;"><canvas id="scaleChart"></canvas></div>
+      <div class="stat-strip" style="margin-bottom:0;">
+        <div class="stat-cell red"><div class="num">5K</div><div class="lbl">Concurrent Users</div></div>
+        <div class="stat-cell"><div class="num">600K</div><div class="lbl">Students / School Year</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Non-Negotiable Requirements</div>
+  <div class="grid-3">
+    <div class="card" style="border-top:4px solid #e4572e;">
+      <div class="card-label">Accessibility</div>
+      <p><strong>WCAG 2.2 AA</strong> compliance mandatory. VPAT required for each section. English + Spanish at minimum. Visual, text, and optional read-aloud modes.</p>
+    </div>
+    <div class="card" style="border-top:4px solid #e4572e;">
+      <div class="card-label">Real-Time Sync</div>
+      <p>Every transaction must update <strong>simultaneously</strong> across student account, business account, and financial institution — no lag, no discrepancy.</p>
+    </div>
+    <div class="card" style="border-top:4px solid #e4572e;">
+      <div class="card-label">Security</div>
+      <p>IETF, OWASP, and W3C standards. Student PII protected. Data encrypted at rest and in transit. Full audit logging in CMS and dashboards.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Agile / Scrum</div>
+      <p>Standard sprint cadence. Scrum ceremonies: pre-sprint planning, standups, refinement, retros, review/demo. Work items in Azure DevOps.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Paper Fallback</div>
+      <p>Complete paper-based version of simulation required for power/internet outage scenarios. CMS generates as PDFs.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Localisation</div>
+      <p>All text + alt text accessible by browser translation. XLF files for English + Spanish. Expandable text containers for character count variation.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EVAL -->
+<div id="eval" class="section">
+  <div class="sec-title">Section 07</div>
+  <div class="sec-heading">Evaluation Criteria</div>
+
+  <div class="callout">
+    JA will score proposals across six dimensions. All submissions must use the JA-provided template. Proposals that are incomplete may be disqualified.
+  </div>
+
+  <div class="grid-2" style="margin-bottom:28px;">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Scoring Dimensions</div>
+      <div class="chart-wrap-lg"><canvas id="evalChart"></canvas></div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">What JA Is Looking For</div>
+      <div class="role-card" style="margin-bottom:16px;">
+        <div class="role-header red">Design Evaluation — Key Signals</div>
+        <div class="role-body"><ul>
+          <li>Evidence you design for kids at different ages (9–12)</li>
+          <li>Role-specific UI — CEO/CFO/CMO feel distinct, not generic</li>
+          <li>Animation that teaches, not just decorates</li>
+          <li>Can show decisions + flows in wireframes before full design</li>
+          <li>Examples of educational platforms for this age group</li>
+          <li>Realistic project planning — no wishful timelines</li>
+          <li>Ability to collaborate with in-house design team</li>
+        </ul></div>
+      </div>
+      <div class="role-card">
+        <div class="role-header">Eligible Applicants</div>
+        <div class="role-body"><ul>
+          <li>US-based companies only</li>
+          <li>Experience in 6-figure cross-platform mobile dev projects</li>
+          <li>.NET framework architecture expertise required</li>
+          <li>CMS creation/implementation experience required</li>
+          <li>UX, UI, visual design, and interaction design in-house</li>
+          <li>Educational solution experience desirable</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Required Proposal Sections</div>
+  <table class="rfp-table">
+    <thead><tr><th>#</th><th>Section</th><th>What to Include</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1</strong></td><td>Executive Overview</td><td>Company info, ownership, team size, 3 comparable project references with client contacts</td></tr>
+      <tr><td><strong>2</strong></td><td>Staffing</td><td>Engagement team, key staff resumes, staffing strategy</td></tr>
+      <tr><td><strong>3</strong></td><td>Approach</td><td>UX/design process, dev process, QA, PM, source control, training, ongoing support costs, warranties</td></tr>
+      <tr><td><strong>4</strong></td><td>Design Evaluation</td><td>Portfolio evidence, examples of kids' educational platforms, wireframing approach, animation examples</td></tr>
+      <tr><td><strong>5</strong></td><td>Schedule</td><td>Milestone plan, risk mitigation strategy for delays</td></tr>
+      <tr><td><strong>6</strong></td><td>Cost / Fees</td><td>Staff roles + hourly rates + total cost range estimate</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SUBMIT -->
+<div id="submit" class="section">
+  <div class="sec-title">Section 08</div>
+  <div class="sec-heading">How to Submit</div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div>
+      <div class="callout">
+        Email all submissions and questions to both contacts. Subject line for questions: <strong>JABT 3.0 RFP Questions</strong>
+      </div>
+      <div class="role-card" style="margin-bottom:16px;">
+        <div class="role-header red">Primary Contacts</div>
+        <div class="role-body" style="padding:16px;">
+          <div style="margin-bottom:12px;">
+            <div style="font-weight:700;font-size:13px;">Jeannine Reilly</div>
+            <div style="font-size:12px;color:#666;">VP, Education Delivery and Technology Solutions</div>
+            <div style="font-size:12px;margin-top:4px;"><strong>jeannine.reilly@ja.org</strong></div>
+          </div>
+          <div style="border-top:1px solid #eee;padding-top:12px;">
+            <div style="font-weight:700;font-size:13px;">Julian Arias</div>
+            <div style="font-size:12px;color:#666;">Associate VP – Experiential Learning Centers</div>
+            <div style="font-size:12px;margin-top:4px;"><strong>julian.arias@ja.org</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="border-top:4px solid #1d1e2c;">
+        <div class="card-label">Address</div>
+        <p>Junior Achievement USA<br>12320 Oracle Blvd., Ste 310<br>Colorado Springs, CO 80921</p>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Submission Checklist</div>
+      <ul class="checklist">
+        <li><span class="check-mark">✓</span> Confirm participation by Mar 18</li>
+        <li><span class="check-mark">✓</span> Submit questions as numbered list by Mar 20 (subject: JABT 3.0 RFP Questions)</li>
+        <li><span class="check-mark">✓</span> Use JA-provided proposal template</li>
+        <li><span class="check-mark">✓</span> Include Executive Overview with 3 references</li>
+        <li><span class="check-mark">✓</span> Include key staff resumes</li>
+        <li><span class="check-mark">✓</span> Include UX/design process + portfolio examples</li>
+        <li><span class="check-mark">✓</span> Include milestone schedule with risk mitigation</li>
+        <li><span class="check-mark">✓</span> Include itemised cost estimate</li>
+        <li><span class="check-mark">✓</span> Submit electronically by <strong style="color:#e4572e;">April 10, 2026</strong></li>
+      </ul>
+      <div style="margin-top:20px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">Important Notices</div>
+        <div class="card" style="border-left:4px solid #e4572e;margin-bottom:10px;">
+          <p><strong>Ownership:</strong> All draft and final materials are sole property of Junior Achievement USA.</p>
+        </div>
+        <div class="card" style="border-left:4px solid #1d1e2c;">
+          <p><strong>No exclusivity:</strong> JA is not offering an exclusive agreement and may contract with more than one party. JA reserves the right to reject any/all proposals.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-strip button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+new Chart(document.getElementById('objChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Career Readiness', 'Business Management', 'Financial Literacy', 'Digital Literacy', 'Decision-Making', 'Civic Understanding', 'Community & Citizenship'],
+    datasets: [{ label: 'Learning Focus', data: [85,90,95,70,88,80,75], borderColor: '#e4572e', backgroundColor: 'rgba(228,87,46,0.1)', borderWidth: 2, pointBackgroundColor: '#e4572e' }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#ddd' }, pointLabels: { font: { size: 11, weight: '700', family: 'Helvetica Neue' }, color: '#1d1e2c' } } } }
+});
+
+new Chart(document.getElementById('ganttChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Design & Dev', 'Prototype', 'JA Area Training', 'Pilot Testing', 'Updates', 'Final Testing'],
+    datasets: [{ label: 'Duration (months)', data: [12,2,2,3,3,3], backgroundColor: ['#1d1e2c','#e4572e','#888','#e4572e','#888','#1d1e2c'] }]
+  },
+  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#888' } }, y: { grid: { display: false }, ticks: { font: { size: 11, weight: '700' }, color: '#1d1e2c' } } } }
+});
+
+new Chart(document.getElementById('moduleChart'), {
+  type: 'bubble',
+  data: { datasets: [
+    { label: 'POS System',        data: [{x:8,y:9,r:16}], backgroundColor: '#e4572e' },
+    { label: 'Banking',           data: [{x:7,y:8,r:14}], backgroundColor: '#1d1e2c' },
+    { label: 'Payroll',           data: [{x:6,y:7,r:12}], backgroundColor: '#555' },
+    { label: 'Loan System',       data: [{x:7,y:9,r:13}], backgroundColor: '#e4572e' },
+    { label: 'Digital Marketing', data: [{x:5,y:6,r:11}], backgroundColor: '#888' },
+    { label: 'Leaderboard (XP)',  data: [{x:4,y:8,r:10}], backgroundColor: '#1d1e2c' },
+    { label: 'Voting',            data: [{x:3,y:5,r: 9}], backgroundColor: '#aaa' },
+    { label: 'AI Features',       data: [{x:9,y:7,r:10}], backgroundColor: '#e4572e' },
+    { label: 'Billing',           data: [{x:5,y:7,r:10}], backgroundColor: '#555' },
+    { label: 'Radio Business',    data: [{x:2,y:4,r: 7}], backgroundColor: '#bbb' },
+    { label: 'Surveys',           data: [{x:3,y:6,r: 8}], backgroundColor: '#888' },
+    { label: 'Team Builder',      data: [{x:6,y:5,r: 9}], backgroundColor: '#555' },
+  ]},
+  options: { responsive: true, maintainAspectRatio: false, layout: { padding: 20 }, plugins: { legend: { position: 'right', labels: { font: { size: 11 }, padding: 8, boxWidth: 10 } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label } } }, scales: { x: { title: { display: true, text: 'Technical Complexity →', font: { size: 11 }, color: '#888' }, min: 0, max: 11, grid: { color: '#eee' }, ticks: { display: false } }, y: { title: { display: true, text: 'Business Impact →', font: { size: 11 }, color: '#888' }, min: 0, max: 11, grid: { color: '#eee' }, ticks: { display: false } } } }
+});
+
+new Chart(document.getElementById('rolesChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Students (150)', 'Volunteers (20)', 'Teachers (10)', 'JA Staff (2–3)'],
+    datasets: [{ data: [150,20,10,3], backgroundColor: ['#e4572e','#1d1e2c','#888','#ccc'], borderWidth: 3, borderColor: '#fbfcff' }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { font: { size: 12, weight: '700' }, padding: 12, boxWidth: 12 } } } }
+});
+
+new Chart(document.getElementById('scaleChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Concurrent Users (peak)', 'Devices per Simulation', 'Annual Student Records'],
+    datasets: [{ label: 'Capacity Required', data: [5000,150,600000], backgroundColor: ['#e4572e','#1d1e2c','#888'] }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#1d1e2c', maxRotation: 15 } }, y: { type: 'logarithmic', grid: { color: '#eee' }, ticks: { font: { size: 10 }, color: '#888', callback: v => v >= 1000 ? (v/1000)+'K' : v } } } }
+});
+
+new Chart(document.getElementById('evalChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Executive Overview', 'Staffing', 'Approach & Process', 'Design Capability', 'Schedule Realism', 'Cost & Value'],
+    datasets: [{ label: 'Weight in Evaluation', data: [70,75,90,95,85,80], borderColor: '#e4572e', backgroundColor: 'rgba(228,87,46,0.1)', borderWidth: 2, pointBackgroundColor: '#e4572e' }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#ddd' }, pointLabels: { font: { size: 11, weight: '700' }, color: '#1d1e2c' } } } }
+});
+</script>
+</body>
+</html>
